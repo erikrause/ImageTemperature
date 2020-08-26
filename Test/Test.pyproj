@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>fd44c777-689f-430d-b83b-39300632d29a</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>test_ImageCCT.py</StartupFile>
+    <StartupFile>test_imageCCT.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -25,7 +25,7 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="test_ImageCCT.py">
+    <Compile Include="test_imageCCT.py">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
