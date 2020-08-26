@@ -4,7 +4,8 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>fd44c777-689f-430d-b83b-39300632d29a</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>test_imageCCT.py</StartupFile>
+    <StartupFile>
+    </StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -24,11 +25,6 @@
     <DebugSymbols>true</DebugSymbols>
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
-  <ItemGroup>
-    <Compile Include="test_imageCCT.py">
-      <SubType>Code</SubType>
-    </Compile>
-  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ImageTemperature\ImageTemperature.pyproj">
       <Name>ImageTemperature</Name>
