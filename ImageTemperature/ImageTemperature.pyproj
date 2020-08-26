@@ -26,6 +26,7 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="src\image_CCT.py" />
     <Compile Include="src\__init__.py">
       <SubType>Code</SubType>
     </Compile>
