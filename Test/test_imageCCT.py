@@ -24,7 +24,7 @@ class Test_image_CCT(unittest.TestCase):
     def test_white_image_CCT(self):
         """ Тест температуры и смещения для белого изображения с погрещность 5%"""
 
-        img_arr = np.ones(shape=[2,2,3])
+        img_arr = np.ones(shape=[100,120,3])
         
         CCT, bias = image_CCT.get_image_CCT(img_arr)
 

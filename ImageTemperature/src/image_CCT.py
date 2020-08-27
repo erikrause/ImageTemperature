@@ -16,9 +16,9 @@ def get_color_CCT(rgb_color):
     x, y = colour.XYZ_to_xy(XYZ)
 
     # Conversion to correlated colour temperature in K.
-    CCT = colour.temperature.xy_to_CCT([x, y], method="Hernandez1999")
+    CCT = colour.temperature.xy_to_CCT([x, y])#, method="Hernandez1999")
 
-    x0, y0 = colour.CCT_to_xy(CCT, method="Hernandez1999")
+    x0, y0 = colour.CCT_to_xy(CCT)#, method="Hernandez1999")
     bias = ((x - x0) ** 2 + (y - y0) ** 2) ** (1 / 2)
 
     return np.array([CCT, bias])
@@ -39,7 +39,9 @@ def get_image_CCT(rgb_img_array, mask=None):
     # Векторизация вычисления для ускорения.
     #vectfunc = np.vectorize(get_color_CCT, signature="(m,n,3)->(m,n,2)")
     #CCT_arr, bias_arr = vectfunc(rgb_img_array) * mask
-    CCT_arr, bias_arr = np.apply_along_axis(get_color_CCT, -1, rgb_img_array)
+    CCT_bias_mask = np.apply_along_axis(get_color_CCT, -1, rgb_img_array)
+    CCT_arr = CCT_bias_mask[:,:,0]
+    bias_arr = CCT_bias_mask[:,:,1]
 
     # Вычисление среднего арифметического для коллерированной цветовой температуры изображения и смещения с учетом маски.
     sum_CCTs = np.sum(CCT_arr)
