@@ -2,19 +2,18 @@ import numpy as np
 import colour
 from PIL import Image
 
-def get_pixel_CCT(rgb_pixel):
-    """ Возвращает коррелированную цветовую температуру (CCT) пикселя RGB (sRGB, [0; 255])
+def get_color_CCT(rgb_color):
+    """ Возвращает коррелированную цветовую температуру (CCT) цвета RGB (sRGB, [0; 255])
    и смещение (bias) относительно кривой Планка на цветовой плоскости. 
    
-   rgb_pixel - numpy массив формата sRGB 
+   rgb_color - numpy массив формата sRGB 
    """
 
     # Conversion to tristimulus values.
-    XYZ = colour.sRGB_to_XYZ(rgb_pixel / 255)
+    XYZ = colour.sRGB_to_XYZ(rgb_color / 255)
 
     # Conversion to chromaticity coordinates.
     x, y = colour.XYZ_to_xy(XYZ)
-    #x, y = [0.1, 0.4]
 
     # Conversion to correlated colour temperature in K.
     CCT = colour.temperature.xy_to_CCT([x, y], method="Hernandez1999")
@@ -22,13 +21,13 @@ def get_pixel_CCT(rgb_pixel):
     x0, y0 = colour.CCT_to_xy(CCT, method="Hernandez1999")
     bias = ((x - x0) ** 2 + (y - y0) ** 2) ** (1 / 2)
 
-    return CCT, bias
+    return np.array([CCT, bias])
 
 def get_image_CCT(rgb_img_array, mask=None):
-    """ Возвращает среднее значение коллерированной цветовой температуры изображения по маске 
+    """ Возвращает среднее значение коллерированной цветовой температуры изображения и смещения.
     
     rgb_img_array - numpy массив пикселей формата sRGB в диапазоне [0; 255];
-    mask - numpy массив маски. Значение маски работает как множитель для каждого пикселя при расчете среднего значения CCT.
+    mask - numpy массив маски. Значение маски работает как множитель для каждого пикселя при расчете его значения CCT.
     """
     x, y, _ = rgb_img_array.shape
 
@@ -37,24 +36,22 @@ def get_image_CCT(rgb_img_array, mask=None):
     else:
         mask = normalize_mask(mask)
 
-    # Вычисление среднего арифметического: image_CCT = pixel_CCT_sum / pixel_multipiler_sum
-    pixel_CCT_sum = 0
-    pixel_multipiler_sum = 0
-    for i in range(0, x):
-        for j in range(0, y):
-            pixel = rgb_img_array[i][j]
-            pixel_multipiler = mask[i][j]
+    # Векторизация вычисления для ускорения.
+    #vectfunc = np.vectorize(get_color_CCT, signature="(m,n,3)->(m,n,2)")
+    #CCT_arr, bias_arr = vectfunc(rgb_img_array) * mask
+    CCT_arr, bias_arr = np.apply_along_axis(get_color_CCT, -1, rgb_img_array)
 
-            pixel_CCT = get_pixel_CCT(pixel) * pixel_multipiler
-            pixel_CCT_sum += pixel_CCT
-            pixel_multipiler_sum += pixel_multipiler
+    # Вычисление среднего арифметического для коллерированной цветовой температуры изображения и смещения с учетом маски.
+    sum_CCTs = np.sum(CCT_arr)
+    sum_biases = np.sum(bias_arr)
+    sum_multipilers = np.sum(mask)
 
-    image_CCT = pixel_CCT_sum / pixel_multipiler_sum
+    mean_CCT = sum_CCTs / sum_multipilers
+    mean_bias = sum_biases / sum_multipilers
 
-    return image_CCT
+    return np.array([mean_CCT, mean_bias])
 
-
-def normalize_mask(mask:type(np.ndarray)):
+def normalize_mask(mask):
     """ Нормализует маску в диапазон [0; 1]
     
     mask - numpy массив маски.

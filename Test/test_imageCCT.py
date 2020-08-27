@@ -5,13 +5,13 @@ import math
 
 class Test_image_CCT(unittest.TestCase):
 
-    def test_white_pixel_CCT(self):
+    def test_white_color_CCT(self):
         """ Тест температуры и смещения для белого цвета с погрешностью 5% """
 
-        CCT, bias = image_CCT.get_pixel_CCT(np.array([255, 255, 255]))
+        CCT, bias = image_CCT.get_color_CCT(np.array([255, 255, 255]))
 
-        self.assertTrue((CCT > 6200) and (CCT < 6800), msg="Цветовая температура белого цвета за пределами погрешности")
-        self.assertTrue((bias < math.fabs(0.05)), msg="Смещение XY белого цвета за пределами погрешности")
+        self.assertTrue((CCT > 6200) and (CCT < 6800), msg="Цветовая температура белого пикселя за пределами погрешности")
+        self.assertTrue((bias < math.fabs(0.05)), msg="Смещение XY белого пикселя за пределами погрешности")
 
     def test_normalize_mask(self):
         """ Тест нормализации маски. """
@@ -22,11 +22,15 @@ class Test_image_CCT(unittest.TestCase):
         self.assertTrue((normalized_mask[0] == 0) and (normalized_mask[1] == 1))
 
     def test_white_image_CCT(self):
-        """ Тест белого изображения """
+        """ Тест температуры и смещения для белого изображения с погрещность 5%"""
 
-        img_arr = np.ones(shape=[100,100,3])
+        img_arr = np.ones(shape=[2,2,3])
         
-        #CCT = Image
+        CCT, bias = image_CCT.get_image_CCT(img_arr)
+
+        self.assertTrue((CCT > 6200) and (CCT < 6800), msg="Цветовая температура белого изображения за пределами погрешности")
+        self.assertTrue((bias < math.fabs(0.05)), msg="Смещение XY белого изображения за пределами погрешности")
+
 
 if __name__ == '__main__':
     unittest.main()
