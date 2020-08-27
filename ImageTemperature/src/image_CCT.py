@@ -1,25 +1,37 @@
 import numpy as np
 import colour
 from PIL import Image
+import time
 
 def get_color_CCT(rgb_color):
     """ Возвращает коррелированную цветовую температуру (CCT) цвета RGB (sRGB, [0; 255])
-   и смещение (bias) относительно кривой Планка на цветовой плоскости. 
-   
-   rgb_color - numpy массив формата sRGB 
-   """
+    и смещение (bias) относительно кривой Планка на цветовой плоскости. 
+    rgb_color - numpy массив формата sRGB 
+    """
 
     # Conversion to tristimulus values.
+    start1 = time.time()
     XYZ = colour.sRGB_to_XYZ(rgb_color / 255)
+    end1 = time.time() - start1
 
     # Conversion to chromaticity coordinates.
+    start2 = time.time()
     x, y = colour.XYZ_to_xy(XYZ)
+    end2 = time.time() - start2
 
     # Conversion to correlated colour temperature in K.
+    start3 = time.time()
     CCT = colour.temperature.xy_to_CCT([x, y])#, method="Hernandez1999")
+    end3 = time.time() - start3
 
+    start4 = time.time()
     x0, y0 = colour.CCT_to_xy(CCT)#, method="Hernandez1999")
+    end4 = time.time() - start4
+    start5 = time.time()
     bias = ((x - x0) ** 2 + (y - y0) ** 2) ** (1 / 2)
+    end5 = time.time() - start5
+
+    prob = 2
 
     return np.array([CCT, bias])
 

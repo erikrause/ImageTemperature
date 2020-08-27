@@ -15,7 +15,7 @@
     <TestFramework>unittest</TestFramework>
     <UnitTestPattern>test*.py</UnitTestPattern>
     <UnitTestRootDirectory>.</UnitTestRootDirectory>
-    <InterpreterId>MSBuild|ImageTemperatureEnv|$(MSBuildProjectFullPath)</InterpreterId>
+    <InterpreterId>MSBuild|env|G:\Магистратура\prob\ImageTemperature\ImageTemperature\ImageTemperature.pyproj</InterpreterId>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -33,18 +33,13 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Interpreter Include="..\..\python_envs\ImageTemperatureEnv\">
-      <Id>ImageTemperatureEnv</Id>
-      <Version>3.7</Version>
-      <Description>ImageTemperatureEnv (Python 3.7 (64-bit))</Description>
-      <InterpreterPath>Scripts\python.exe</InterpreterPath>
-      <WindowsInterpreterPath>Scripts\pythonw.exe</WindowsInterpreterPath>
-      <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
-      <Architecture>X64</Architecture>
-    </Interpreter>
+    <Compile Include="test_imageCCT.py" />
+    <Compile Include="test_speed.py">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="test_imageCCT.py" />
+    <InterpreterReference Include="MSBuild|env|G:\Магистратура\prob\ImageTemperature\ImageTemperature\ImageTemperature.pyproj" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
