@@ -2,26 +2,56 @@ import numpy as np
 import colour
 from PIL import Image
 
-def get_color_CCT(rgb_color):
-    """ Возвращает коррелированную цветовую температуру (CCT) цвета RGB (sRGB, [0; 255])
-   и смещение (bias) относительно кривой Планка на цветовой плоскости. 
-   
-   rgb_color - numpy массив формата sRGB 
-   """
+from colormath.color_objects import XYZColor, sRGBColor, xyYColor
+from colormath.color_conversions import convert_color
+import time
 
+def CCT_Hernandez1999(lst_x, lst_y):
+    n = (lst_x-0.3366)/(lst_y-0.1735)
+    CCT = (-949.86315 + 6253.80338 * np.exp(-n / 0.92159) + 28.70599 * np.exp(-n / 0.20039) + 0.00004 * np.exp(-n / 0.07125))
+
+def get_image_CCT_np(rgb_img_array, mask=None):
+
+    x, y, _ = rgb_img_array.shape
+
+    if mask == None:
+        mask = np.ones([x, y])
+    else:
+        mask = normalize_mask(mask)
+
+
+def get_color_CCT(rgb_color):
+    """ Возвращает коррелированную цветовую температуру (CCT) цвета RGB (sRGB, [0; 1])
+    и смещение (bias) относительно кривой Планка на цветовой плоскости. 
+    
+    rgb_color - numpy массив формата sRGB 
+    """
+    
     # Conversion to tristimulus values.
-    XYZ = colour.sRGB_to_XYZ(rgb_color / 255)
+    #start1 = time.time()
+    #XYZ = colour.sRGB_to_XYZ(rgb_color / 255)
+    #end1 = time.time() - start1
+
+    rgb = sRGBColor(rgb_color[0], rgb_color[1], rgb_color[2])
+    #start2 = time.time()
+    xyY = convert_color(rgb, xyYColor, target_illuminant='d65')
+    x = xyY.xyy_x
+    y = xyY.xyy_y
+    #end2 = time.time() - start2
 
     # Conversion to chromaticity coordinates.
-    x, y = colour.XYZ_to_xy(XYZ)
+    #start3 = time.time()
+    #x, y = colour.XYZ_to_xy(XYZ)
+    #end3 = time.time() - start3
 
     # Conversion to correlated colour temperature in K.
-    CCT = colour.temperature.xy_to_CCT([x, y])#, method="Hernandez1999")
+    #CCT = colour.temperature.xy_to_CCT([x, y])#, method="Hernandez1999")
 
-    x0, y0 = colour.CCT_to_xy(CCT)#, method="Hernandez1999")
-    bias = ((x - x0) ** 2 + (y - y0) ** 2) ** (1 / 2)
+    #x0, y0 = colour.CCT_to_xy(CCT)#, method="Hernandez1999")
+    #bias = ((x - x0) ** 2 + (y - y0) ** 2) ** (1 / 2)
 
-    return np.array([CCT, bias])
+    #return np.array([CCT, bias])
+    return np.array([x, y])
 
 def get_image_CCT(rgb_img_array, mask=None):
     """ Возвращает среднее значение коллерированной цветовой температуры изображения и смещения.
