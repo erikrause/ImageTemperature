@@ -7,13 +7,13 @@ while True:
     filename = input("Введите название изображения -> ")
     with Image.open(filename) as image:
         img_arr = np.array(image)
-        
-        prob = np.where(img_arr==[0,1,3], 1, 0)
 
         img_arr = img_arr / 255
 
-
-        mean_CCT, mean_bias = image_CCT.get_image_CCT(img_arr)
+        #mean = np.mean(img_arr, axis=(0,1))
+        #mean_CCT = image_CCT.get_image_CCT(np.reshape(mean, (1,1,3)), alg="Hernandez1999")
+        mean_CCT = image_CCT.get_CCT_arr(img_arr)
+        prob= image_CCT.get_mean_CCT(img_arr)
 
         print(mean_CCT)
-        print(mean_bias)
+        print(prob)

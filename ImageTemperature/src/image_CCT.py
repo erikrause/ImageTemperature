@@ -1,6 +1,4 @@
 import numpy as np
-import colour
-from PIL import Image
 
 #from colormath.color_conversions import 
 
@@ -32,6 +30,11 @@ def __xyz_arr_to_xy(xyz):
 
     return np.array([xy_x, xy_y])
 
+def __xy_to_CCT_Mccamy1992(xy_arr):
+
+    n = (xy_arr[0] - 0.3320) / (xy_arr[1] - 0.1858)
+    return -449 * n ** 3 + 3525 * n ** 2 - 6823.3 * n + 5520.33
+
 def __xy_to_CCT_Hernandez1999(xy_arr):
     """ Возвращает коррерированную цветовую температуру по алгоритму Hernandez et al. 1999 """
 
@@ -53,44 +56,31 @@ def __xy_to_CCT_Hernandez1999(xy_arr):
                    CCT)
 
     return CCT
- 
-def __CCT_to_xy_Kang2002(CCT_arr):
-    """ Kan et al. 2002. Допустимый диапазон: [1667, 25000] """
 
-    # TODO: проверить на всем диапазоне
-    x = np.where(CCT_arr <= 4000,
-                 -0.2661239 * 10 ** 9 / CCT_arr ** 3 -
-                 0.2343589 * 10 ** 6 / CCT_arr ** 2 +
-                 0.8776956 * 10 ** 3 / CCT_arr +
-                 0.179910,
-                 -3.0258469 * 10 ** 9 / CCT_arr ** 3 +
-                 2.1070379 * 10 ** 6 / CCT_arr ** 2 +
-                 0.2226347 * 10 ** 3 / CCT_arr +
-                 0.24039)
+def get_mean_CCT(rgb_img_array, alg="Mccamy1992"):
 
-    y = np.select([CCT_arr <= 2222,
-                   np.logical_and(CCT_arr > 2222, CCT_arr <= 4000),
-                   CCT_arr > 4000],
-                  [-1.1063814 * x ** 3 -
-                   1.34811020 * x ** 2 +
-                   2.18555832 * x -
-                   0.20219683,
-                   -0.9549476 * x ** 3 -
-                   1.37418593 * x ** 2 +
-                   2.09137015 * x -
-                   0.16748867,
-                   3.0817580 * x ** 3 -
-                   5.8733867 * x ** 2 +
-                   3.75112997 * x -
-                   0.37001483])
+    mean_rgb = np.mean(rgb_img_array, axis=(0,1))
+    mean_rgb = np.reshape(mean_rgb, (1,1,3))
 
-    return np.array([x, y])
+    CTT_arr = get_CCT_arr(mean_rgb)
+    """
+    linearRGB = __sRGB_to_linear_RGB(mean_rgb)
+    xyz_arr = __linearRGB_to_xyz(linearRGB[:,0], linearRGB[:,1], linearRGB[:,2])   # Конвертация в XYZ
+    xy_arr = __xyz_arr_to_xy(xyz_arr)       # Конвертация в XY
 
-def get_image_CCT(rgb_img_array, mask=None):
-    """ Возвращает среднее значение коллерированной цветовой температуры изображения и смещения.
+    if alg == "Mccamy1992":
+        CCT_arr = __xy_to_CCT_Mccamy1992(mean_rgb)
+    if alg == "Hernandez1999":
+        CCT_arr = __xy_to_CCT_Hernandez1999(mean_rgb)
+    """
+    return CTT_arr[0]
+
+def get_CCT_arr(rgb_img_array, mask=None, min=2000, max=12500, alg="Mccamy1992"):
+    """ Возвращает среднее значение коллерированной цветовой температуры изображения. TODO: добавить возврат смещения
     
     rgb_img_array - numpy массив пикселей формата sRGB в диапазоне [0; 1];
     mask - numpy массив маски. Значение маски работает как множитель для каждого пикселя при расчете его значения CCT.
+    min, max - диапазон CCT. Для Mccamy - [2000; 12500]
     """
     x, y, _ = rgb_img_array.shape
 
@@ -114,21 +104,39 @@ def get_image_CCT(rgb_img_array, mask=None):
     
     xyz_arr = np.array(list(map(__linearRGB_to_xyz, r, g, b)))   # Конвертация в XYZ
     xy_arr = __xyz_arr_to_xy(xyz_arr)       # Конвертация в XY
-    CCT_arr = __xy_to_CCT_Hernandez1999(xy_arr) * mask      # Получение температуры для каждого пикселя
 
-    # Вычисление смещения от кривой планка на плоскости XY
-    x0, y0 = __CCT_to_xy_Kang2002(CCT_arr)      
-    bias_arr = (((xy_arr[0,:] - x0) ** 2 + (xy_arr[1,:] - y0) ** 2) ** (1 / 2)) * mask
+    if alg == "Mccamy1992":
+        CCT_arr = __xy_to_CCT_Mccamy1992(xy_arr)
+    if alg == "Hernandez1999":
+        CCT_arr = __xy_to_CCT_Hernandez1999(xy_arr)
 
-    # Вычисление среднего арифметического для коллерированной цветовой температуры изображения и смещения с учетом маски.
+
+    # Вычисление смещения от кривой планка на плоскости XY:
+    #x0, y0 = __CCT_to_xy_Kang2002()
+    #bias_arr = (((xy_arr[0,:] - x0) ** 2 + (xy_arr[1,:] - y0) ** 2) ** (1 / 2))
+
+    # Фильтрация по диапазону CCT [min; max]:
+    indexes = np.where(np.logical_and(CCT_arr >= min, CCT_arr[:] <= max))
+    CCT_arr = CCT_arr[indexes]
+    #bias_arr = bias_arr[indexes]
+    mask = mask[indexes]
+
+    # Применеие маски:
+    CCT_arr = CCT_arr * mask
+    #bias_arr = bias_arr * mask
+
+    return CCT_arr
+    """
+    # Вычисление среднего арифметического для коллерированной цветовой температуры изображения и смещения с учетом маски:
     sum_CCTs = np.sum(CCT_arr)
-    sum_biases = np.sum(bias_arr)
+    #sum_biases = np.sum(bias_arr)
     sum_multipilers = np.sum(mask)
 
     mean_CCT = sum_CCTs / sum_multipilers
-    mean_bias = sum_biases / sum_multipilers
+    #mean_bias = sum_biases / sum_multipilers
 
-    return np.array([mean_CCT, mean_bias])
+    #return np.array([mean_CCT, mean_bias])
+    return mean_CCT"""
 
 def __normalize_mask(mask):
     """ Нормализует маску в диапазон [0; 1]
