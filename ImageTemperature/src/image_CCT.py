@@ -57,31 +57,13 @@ def __xy_to_CCT_Hernandez1999(xy_arr):
 
     return CCT
 
-def get_mean_CCT(rgb_img_array, alg="Mccamy1992"):
-
-    mean_rgb = np.mean(rgb_img_array, axis=(0,1))
-    mean_rgb = np.reshape(mean_rgb, (1,1,3))
-
-    CTT_arr = get_CCT_arr(mean_rgb)
-    """
-    linearRGB = __sRGB_to_linear_RGB(mean_rgb)
-    xyz_arr = __linearRGB_to_xyz(linearRGB[:,0], linearRGB[:,1], linearRGB[:,2])   # Конвертация в XYZ
-    xy_arr = __xyz_arr_to_xy(xyz_arr)       # Конвертация в XY
-
-    if alg == "Mccamy1992":
-        CCT_arr = __xy_to_CCT_Mccamy1992(mean_rgb)
-    if alg == "Hernandez1999":
-        CCT_arr = __xy_to_CCT_Hernandez1999(mean_rgb)
-    """
-    return CTT_arr[0]
-
-def get_CCT_arr(rgb_img_array, mask=None, min=2000, max=12500, alg="Mccamy1992"):
-    """ Возвращает среднее значение коллерированной цветовой температуры изображения. TODO: добавить возврат смещения
+def get_mean_CCT(rgb_img_array, mask=None, alg="Mccamy1992"):
+    """ Возвращает среднее значение коллерированной цветовой температуры изображения.
     
     rgb_img_array - numpy массив пикселей формата sRGB в диапазоне [0; 1];
-    mask - numpy массив маски. Значение маски работает как множитель для каждого пикселя при расчете его значения CCT.
-    min, max - диапазон CCT. Для Mccamy - [2000; 12500]
+    mask - маска, по которой производится расчет. Автоматически нормализуется в диапазон [0, 1].
     """
+
     x, y, _ = rgb_img_array.shape
 
     if mask == None:
@@ -89,12 +71,40 @@ def get_CCT_arr(rgb_img_array, mask=None, min=2000, max=12500, alg="Mccamy1992")
     else:
         mask = __normalize_mask(mask)
 
+    mean_rgb = np.mean(rgb_img_array, axis=(0,1))
+    mean_rgb = np.reshape(mean_rgb, (1,1,3))
+
+    CCT_arr = get_CCT_arr(mean_rgb, alg=alg)
+
+    # Применение маски:
+    CCT_arr = CCT_arr * mask
+    #bias_arr = bias_arr * mask
+
+    # Вычисление среднего арифметического для коллерированной цветовой температуры изображения и смещения с учетом маски:
+    sum_CCTs = np.sum(CCT_arr)
+    #sum_biases = np.sum(bias_arr)
+    sum_multipilers = np.sum(mask)
+
+    mean_CCT = sum_CCTs / sum_multipilers
+    #mean_bias = sum_biases / sum_multipilers
+
+    return mean_CCT
+
+def get_CCT_arr(rgb_img_array, alg="Mccamy1992"):
+    """ Возвращает значения коллерированной цветовой температуры каждого пикселя изображения. TODO: добавить возврат смещения
+    
+    rgb_img_array - numpy массив пикселей формата sRGB в диапазоне [0; 1];
+    mask - numpy массив маски. Значение маски работает как множитель для каждого пикселя при расчете его значения CCT;
+    alg - "Mccamy1992", "Hernandez1999"
+    """
+
     # Векторизация вычисления для ускорения.
     #vectfunc = np.vectorize(get_color_CCT, signature="(m,n,3)->(m,n,2)")
 
+    x, y, _ = rgb_img_array.shape
+
     # Векторищация массива для numpy.map():
     rgb_vector = rgb_img_array.reshape([x*y, 3])
-    mask = mask.reshape([x*y])
 
     linearRGB = __sRGB_to_linear_RGB(rgb_vector)
 
@@ -116,14 +126,12 @@ def get_CCT_arr(rgb_img_array, mask=None, min=2000, max=12500, alg="Mccamy1992")
     #bias_arr = (((xy_arr[0,:] - x0) ** 2 + (xy_arr[1,:] - y0) ** 2) ** (1 / 2))
 
     # Фильтрация по диапазону CCT [min; max]:
-    indexes = np.where(np.logical_and(CCT_arr >= min, CCT_arr[:] <= max))
-    CCT_arr = CCT_arr[indexes]
+    #indexes = np.where(np.logical_and(CCT_arr >= min, CCT_arr[:] <= max))
+    #CCT_arr = CCT_arr[indexes]
     #bias_arr = bias_arr[indexes]
-    mask = mask[indexes]
+    #mask = mask[indexes]
 
-    # Применеие маски:
-    CCT_arr = CCT_arr * mask
-    #bias_arr = bias_arr * mask
+    CTT_arr =np.reshape(CCT_arr, [x,y])
 
     return CCT_arr
     """
