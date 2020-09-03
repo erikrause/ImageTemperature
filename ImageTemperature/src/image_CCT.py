@@ -2,14 +2,22 @@ import numpy as np
 
 #from colormath.color_conversions import 
 
-def __sRGB_to_linear_RGB(rgb):
+def sRGB_to_linearRGB(rgb):
     """ Конвертирует массив sRGB в linearRGB. Math source: http://www.brucelindbloom.com/index.html?Eqn_RGB_to_XYZ.html """
 
     return np.where(rgb[:] <= 0.04045,
                     rgb/12.92,
                     ((rgb + 0.055) / 1.055) ** 2.4)
 
-def __linearRGB_to_xyz(r,g,b):
+def linearRGB_to_sRGB(rgb):
+    """ Конвертирует массив linearRGB в sRGB. """
+
+    # TODO: test
+    return np.where(rgb[:] <= 0.003108,
+                    rgb * 12.92,
+                    1.055 * np.power(rgb, 1.0/2.4) - 0.55)
+
+def linearRGB_to_xyz(r,g,b):
     """ Конвертирует цвет linearRGB в XYZ спектр. Math source: http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html """
 
     M = np.array([[0.4124564, 0.3575761, 0.1804375],
@@ -19,7 +27,7 @@ def __linearRGB_to_xyz(r,g,b):
 
     return np.dot(M, RGB)
 
-def __xyz_arr_to_xy(xyz):
+def xyz_arr_to_xy(xyz):
 
     sum = np.sum(xyz, axis=-1)
     sum[sum == 0] = 1   # Убирает деление на 0 в дальнейшем
@@ -106,14 +114,14 @@ def get_CCT_arr(rgb_img_array, alg="Mccamy1992"):
     # Векторищация массива для numpy.map():
     rgb_vector = rgb_img_array.reshape([x*y, 3])
 
-    linearRGB = __sRGB_to_linear_RGB(rgb_vector)
+    linearRGB = sRGB_to_linearRGB(rgb_vector)
 
     r = linearRGB[:, 0]
     g = linearRGB[:, 1]
     b = linearRGB[:, 2]
     
-    xyz_arr = np.array(list(map(__linearRGB_to_xyz, r, g, b)))   # Конвертация в XYZ
-    xy_arr = __xyz_arr_to_xy(xyz_arr)       # Конвертация в XY
+    xyz_arr = np.array(list(map(linearRGB_to_xyz, r, g, b)))   # Конвертация в XYZ
+    xy_arr = xyz_arr_to_xy(xyz_arr)       # Конвертация в XY
 
     if alg == "Mccamy1992":
         CCT_arr = __xy_to_CCT_Mccamy1992(xy_arr)
@@ -131,7 +139,7 @@ def get_CCT_arr(rgb_img_array, alg="Mccamy1992"):
     #bias_arr = bias_arr[indexes]
     #mask = mask[indexes]
 
-    CTT_arr =np.reshape(CCT_arr, [x,y])
+    CCT_arr =np.reshape(CCT_arr, [x,y])
 
     return CCT_arr
     """

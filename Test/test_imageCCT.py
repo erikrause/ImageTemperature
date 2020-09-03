@@ -1,32 +1,51 @@
 import unittest
 import numpy as np
 from src import image_CCT
+"""
 from src.image_CCT import __linearRGB_to_xyz as _image_CCT__linearRGB_to_xyz
 from src.image_CCT import __xyz_arr_to_xy as _image_CCT__xyz_arr_to_xy
 from src.image_CCT import __xy_to_CCT_Hernandez1999 as _image_CCT__xy_to_CCT_Hernandez1999
 from src.image_CCT import __sRGB_to_linear_RGB as _image_CCT__sRGB_to_linear_RGB
+"""
 
 import math
 from PIL import Image
 
-import colour
-import colormath
-import colormath.color_conversions
-from colormath.color_objects import XYZColor, sRGBColor, xyYColor
-
+#import colour
+#import colormath
+#import colormath.color_conversions
+#from colormath.color_objects import XYZColor, sRGBColor, xyYColor
+from src import image_CCT
 
 class Test_image_CCT(unittest.TestCase):
 
+    def test_delta_RGB(self):
+
+        rgb_img1 = np.full((10,10,3), 255)
+        rgb_img2 = np.full((10,10,3), 128)
+
+        linear_rgb_img1 = image_CCT.sRGB_to_linearRGB(rgb_img1 / 255)
+        linear_rgb_img2 = image_CCT.sRGB_to_linearRGB(rgb_img2 / 255)
+
+        sRGB_delta = rgb_img2 / 255 - rgb_img1 /255
+        linear_delta = linear_rgb_img2 - linear_rgb_img1
+
+        prob = 0
+
+
+    """
     def test_normalize_mask(self):
-        """ Тест нормализации маски. """
+        #Тест нормализации маски.
 
         mask = np.array([-25, 42])
         normalized_mask = image_CCT.normalize_mask(mask)
 
         self.assertTrue((normalized_mask[0] == 0) and (normalized_mask[1] == 1))
 
+
+    
     def test_white_image_CCT(self):
-        """ Тест температуры и смещения для белого изображения с погрещность 5%"""
+        #Тест температуры и смещения для белого изображения с погрещность 5%
 
         img_arr = np.ones(shape=[1000,1000,3])
         
@@ -34,8 +53,6 @@ class Test_image_CCT(unittest.TestCase):
 
         self.assertTrue((np.mean(CCT) > 6200) and (np.mean(CCT) < 6800), msg="Цветовая температура белого изображения за пределами погрешности")
         #self.assertTrue((bias < math.fabs(0.05)), msg="Смещение XY белого изображения за пределами погрешности")
-
-    """
     def test_xy(self):
 
         rgb = np.array([0.0, 0.0039215686274509803, 0.011764705882352941])
